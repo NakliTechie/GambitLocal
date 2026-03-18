@@ -690,9 +690,14 @@ function applyEngineMove(uciMove) {
 // ─────────────────────────────────────────────────────────
 //  Board
 // ─────────────────────────────────────────────────────────
+// On touch devices, chessboard.js consumes touchstart for drag, which
+// prevents synthetic click events from ever firing. Disabling drag on
+// touch devices lets our tap handler work; users tap-to-select instead.
+const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
 function initBoard() {
   board = Chessboard('board', {
-    draggable: true,
+    draggable: !isTouchDevice,
     position: 'start',
     pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
     onDragStart,
