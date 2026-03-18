@@ -206,12 +206,31 @@ body {
 /* ── Move highlights ─────────────────────────────────── */
 .sq-from { background: rgba(102,126,234,0.35) !important; }
 .sq-to   { background: rgba(102,126,234,0.35) !important; }
+.sq-selected { background: rgba(102,126,234,0.5) !important; }
 .sq-hint::after {
   content: ''; display: block; width: 32%; height: 32%;
   border-radius: 50%; background: rgba(102,126,234,0.38);
   margin: 34% auto 0;
 }
 .sq-hint-cap { box-shadow: inset 0 0 0 4px rgba(102,126,234,0.45) !important; }
+
+/* ── Hints toggle ────────────────────────────────────── */
+.hints-toggle {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.78rem; font-weight: 600; color: #718096;
+  cursor: pointer; user-select: none; margin-left: auto;
+}
+.toggle-track {
+  width: 30px; height: 17px; border-radius: 9px;
+  background: #e2e8f0; position: relative; transition: background 0.2s; flex-shrink: 0;
+}
+.toggle-track.on { background: #667eea; }
+.toggle-thumb {
+  width: 13px; height: 13px; border-radius: 50%;
+  background: white; position: absolute; top: 2px; left: 2px;
+  transition: left 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.toggle-track.on .toggle-thumb { left: 15px; }
 
 /* ── Modals ──────────────────────────────────────────── */
 .modal-overlay {
@@ -422,6 +441,12 @@ body {
         <option value="900">⏱ 15 min</option>
         <option value="1800">⏱ 30 min</option>
       </select>
+      <label class="hints-toggle" id="hintsToggle" title="Show legal move hints">
+        Hints
+        <div class="toggle-track on" id="hintsTrack">
+          <div class="toggle-thumb"></div>
+        </div>
+      </label>
       <div class="color-choice" id="colorChoice">
         <button class="color-btn active" data-color="white" title="Play as White">♔</button>
         <button class="color-btn cb-random" data-color="random" title="Random side">?</button>
@@ -579,6 +604,8 @@ let skillLevel  = 5;
 let searchDepth = 5;
 let isGameOver  = false;
 let engineThinking = false;
+let selectedSquare = null;   // tap-to-move: currently selected square
+let hintsEnabled   = true;   // show legal move hints
 
 // Clock
 let timePerSide   = 0;               // seconds (0 = unlimited)
@@ -691,6 +718,7 @@ function onDragStart(source, piece) {
 }
 
 function onDrop(source, target) {
+  clearSelection();
   clearHighlights();
   clearHints();
   const move = game.move({ from: source, to: target, promotion: 'q' });
@@ -712,9 +740,17 @@ function onSnapEnd() {
 }
 
 function onMouseoverSquare(square, piece) {
-  if (isGameOver) return;
+  if (isGameOver || !hintsEnabled || selectedSquare) return;
   const turn = game.turn();
   if (gameMode === 'engine' && (turn === 'w') !== (playerColor === 'white')) return;
+  showHintsFor(square);
+}
+
+function onMouseoutSquare() {
+  if (!selectedSquare) clearHints();
+}
+
+function showHintsFor(square) {
   const legalMoves = game.moves({ square, verbose: true });
   if (!legalMoves.length) return;
   legalMoves.forEach(m => {
@@ -723,10 +759,70 @@ function onMouseoverSquare(square, piece) {
   });
 }
 
-function onMouseoutSquare() { clearHints(); }
-
 function clearHints()      { $('.sq-hint, .sq-hint-cap').removeClass('sq-hint sq-hint-cap'); }
 function clearHighlights() { $('.sq-from, .sq-to').removeClass('sq-from sq-to'); }
+
+// ── Tap-to-move ───────────────────────────────────────────
+function isMyPiece(piece) {
+  if (!piece) return false;
+  const turn = game.turn();
+  return (turn === 'w' && piece.color === 'w') || (turn === 'b' && piece.color === 'b');
+}
+
+function isMyTurn() {
+  if (isGameOver) return false;
+  if (gameMode === 'correspondence') return true;
+  return (game.turn() === 'w') === (playerColor === 'white');
+}
+
+function selectSquare(square) {
+  clearSelection();
+  selectedSquare = square;
+  $(`[data-square="${square}"]`).addClass('sq-selected');
+  if (hintsEnabled) showHintsFor(square);
+}
+
+function clearSelection() {
+  selectedSquare = null;
+  $('.sq-selected').removeClass('sq-selected');
+  clearHints();
+}
+
+function commitMove(from, to) {
+  clearSelection();
+  clearHighlights();
+  const move = game.move({ from, to, promotion: 'q' });
+  if (!move) return false;
+  board.position(game.fen());
+  highlightMove(move.from, move.to);
+  afterMoveUpdate();
+  if (gameMode === 'engine' && !isGameOver) setTimeout(requestEngineMove, 200);
+  if (gameMode === 'correspondence') {
+    updateShareUrl();
+    document.getElementById('shareBtn').style.display = '';
+  }
+  return true;
+}
+
+// Tap handler — fires on both desktop click and mobile tap
+$(document).on('click', '.square-55d63', function () {
+  if (isGameOver) return;
+  const square = $(this).data('square');
+  const piece  = game.get(square);
+
+  if (selectedSquare) {
+    // Tapped same square → deselect
+    if (square === selectedSquare) { clearSelection(); return; }
+    // Tapped another own piece → reselect
+    if (piece && isMyPiece(piece) && isMyTurn()) { selectSquare(square); return; }
+    // Attempt move
+    commitMove(selectedSquare, square);
+  } else {
+    if (!isMyTurn()) return;
+    if (!piece || !isMyPiece(piece)) return;
+    selectSquare(square);
+  }
+});
 
 function highlightMove(from, to) {
   clearHighlights();
@@ -939,8 +1035,8 @@ function newGame() {
   isGameOver     = false;
   engineThinking = false;
   clearInterval(clockTick);
+  clearSelection();
   clearHighlights();
-  clearHints();
 
   document.getElementById('resultBanner').style.display = 'none';
   document.getElementById('shareBtn').style.display     = 'none';
@@ -1055,6 +1151,12 @@ document.getElementById('shareBtn').addEventListener('click', () => {
 document.getElementById('pgnModal').addEventListener('click', e => {
   if (e.target === document.getElementById('pgnModal'))
     document.getElementById('pgnModal').classList.remove('open');
+});
+
+document.getElementById('hintsToggle').addEventListener('click', () => {
+  hintsEnabled = !hintsEnabled;
+  document.getElementById('hintsTrack').classList.toggle('on', hintsEnabled);
+  if (!hintsEnabled) clearHints();
 });
 
 document.getElementById('helpBtn').addEventListener('click', () => {
