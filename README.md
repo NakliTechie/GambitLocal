@@ -2,7 +2,7 @@
 
 **Play chess in your browser — offline, private, no account needed.**
 
-🎮 **[Play now → naklitech.github.io/GambitLocal](https://naklitech.github.io/GambitLocal)**
+🎮 **[Play now →](https://naklitechie.github.io/GambitLocal)**
 
 GambitLocal is part of the [NakliTechie](https://github.com/NakliTechie) series of browser-native tools: single-file apps that run entirely on your device. No server. No API keys. No data leaving your machine.
 
