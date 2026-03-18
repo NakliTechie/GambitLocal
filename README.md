@@ -12,13 +12,15 @@ GambitLocal is part of the [NakliTechie](https://github.com/NakliTechie) series 
 
 - **vs Engine** — Play against Stockfish, a world-class chess engine, running entirely in your browser via WebAssembly. Adjustable difficulty from Beginner to Max.
 - **Correspondence mode** — Play a slow game with a friend over WhatsApp, email, or any messenger. The full game state is encoded in a URL — share a link after each move, no app or account needed on either side.
-- **Legal move hints** — Hover a piece to see all valid squares highlighted.
+- **Mobile friendly** — Tap to select a piece, tap to place it. Works on any touchscreen browser; no app required.
+- **Legal move hints** — Hover (desktop) or select (mobile) a piece to see all valid squares highlighted. Toggle hints on/off.
 - **Opening detection** — Recognises ~40 openings automatically as you play.
 - **Move history** — Full algebraic notation, scrollable.
 - **Captured pieces** — Displayed per player.
 - **Time controls** — Bullet (1 min) through Classical (30 min), or unlimited.
 - **PGN export** — Copy the full game in standard notation.
 - **Flip board**, **Undo move**, result detection (checkmate, stalemate, draws).
+- **Hints toggle** — Turn move hints on or off (default on).
 - Works offline after the first load — the engine is cached by your browser.
 
 ---
