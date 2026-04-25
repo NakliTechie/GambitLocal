@@ -75,6 +75,14 @@ python3 -m http.server 8080
 
 ---
 
+## Palette
+
+Coloured with **`iran-02 · خشت KHESHT`** — Yazd mud-brick (UNESCO 2017), the homeland of shatranj where chaturanga became chess. Warm clay body, royal-blue command accent, brick-red brand mark.
+
+Palette pulled from [**Rangrez**](https://github.com/NakliTechie/rangrez), the global colour-palette library that backs all NakliTechie projects.
+
+---
+
 ## Deployment
 
 Hosted on GitHub Pages from the `main` branch. Any push to `main` automatically updates the live site.
